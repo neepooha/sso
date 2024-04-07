@@ -22,7 +22,7 @@ func main() {
 	log.Info("starting sso", slog.String("env", cfg.Env), slog.String("port", cfg.Port))
 	log.Debug("debug messages are enabled")
 
-	application := app.New(log, cfg.Port, cfg.StoragePath, cfg.TokenTTL)
+	application := app.New(log, cfg.Host, cfg.Port, cfg.StoragePath, cfg.TokenTTL)
 	go application.GRPCSrv.MustRun()
 
 	stop := make(chan os.Signal, 1)

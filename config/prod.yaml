@@ -2,5 +2,6 @@ env: "prod"
 storage_path: "./storage/sso.db"
 token_ttl: 1h
 grpc:
+  host: 172.17.2.169
   port: 44044
   timeout: 10s

@@ -15,7 +15,7 @@ jobs:
       PORT: 5157
       DEPLOY_DIRECTORY: /root/apps/grpc-auth
       CONFIG_PATH: /root/apps/grpc-auth/config/prod.yaml
-      ENV_FILE_PATH: /root/apps/url-shortener/config.env
+      ENV_FILE_PATH: /root/apps/grpc-auth/config.env
 
     steps:
       - name: Checkout repository

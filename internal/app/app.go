@@ -12,7 +12,7 @@ type App struct {
 	GRPCSrv *grpcapp.App
 }
 
-func New(log *slog.Logger, grpcPort string, storagePath string, tokenTTL time.Duration) *App {
+func New(log *slog.Logger, grpcHost string, grpcPort string, storagePath string, tokenTTL time.Duration) *App {
 	storage, err := sqlite.New(storagePath)
 	if err != nil {
 		panic(err)
@@ -20,6 +20,6 @@ func New(log *slog.Logger, grpcPort string, storagePath string, tokenTTL time.Du
 	
 	authServer := auth.New(log, storage, storage, storage, tokenTTL)
 
-	grpcApp := grpcapp.New(log, authServer, grpcPort)
+	grpcApp := grpcapp.New(log, authServer, grpcHost, grpcPort)
 	return &App{GRPCSrv: grpcApp}
 }

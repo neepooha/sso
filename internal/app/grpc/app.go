@@ -12,10 +12,11 @@ import (
 type App struct {
 	log        *slog.Logger
 	gRPCServer *grpc.Server
+	host       string
 	port       string
 }
 
-func New(log *slog.Logger, authService authgrpc.Auth, port string) *App {
+func New(log *slog.Logger, authService authgrpc.Auth, host string, port string) *App {
 	gRPCServer := grpc.NewServer()
 	authgrpc.Register(gRPCServer, authService)
 
@@ -36,7 +37,7 @@ func (a *App) run() error {
 	const op = "app.grpc.app.Run"
 	log := a.log.With(slog.String("op", op), slog.String("port", a.port))
 
-	l, err := net.Listen("tcp", ":"+a.port)
+	l, err := net.Listen("tcp", a.host+":"+a.port)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

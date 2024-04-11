@@ -1,12 +1,12 @@
-env: "local"
+env: "dev"
 storage:
-  host: "localhost"
+  host: "ssodb"
   port: 5432
   dbname: "auth"
   user: "postgres"
   password: "mypass"
 token_ttl: 1h
 grpc:
-  host: "localhost"
+  host: "sso-server"
   port: 44044
   timeout: 10s

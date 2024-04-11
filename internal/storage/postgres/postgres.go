@@ -92,6 +92,56 @@ func (s *Storage) App(ctx context.Context, appID int) (models.App, error) {
 	return app, nil
 }
 
+func (s *Storage) SetAdmin(ctx context.Context, email string) error {
+	const op = "storage.postgres.SetAdmin"
+
+	stmt := `SELECT id FROM users WHERE email = $1`
+	var uid uint64
+	err := s.db.QueryRow(ctx, stmt, email).Scan(&uid)
+	if err != nil {
+		if IsNotFoundError(err) {
+			return fmt.Errorf("%s: %w", op, storage.ErrUserNotFound)
+		}
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	stmt = `INSERT INTO admins (id) VALUES ($1)`
+	_, err = s.db.Exec(ctx, stmt, uid)
+	if err != nil {
+		if IsDuplicatedKeyError(err) {
+			return fmt.Errorf("%s: %w", op, storage.ErrAdminExists)
+		}
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (s *Storage) DelAdmin(ctx context.Context, email string) (error) {
+	const op = "storage.postgres.DelAdmin"
+
+	stmt := `SELECT id FROM users WHERE email = $1`
+	var uid uint64
+	err := s.db.QueryRow(ctx, stmt, email).Scan(&uid)
+	if err != nil {
+		if IsNotFoundError(err) {
+			return fmt.Errorf("%s: %w", op, storage.ErrUserNotFound)
+		}
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	stmt = `DELETE FROM admins WHERE id = $1`
+	res, err := s.db.Exec(ctx, stmt, uid)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	affect := res.RowsAffected()
+	if affect == 0 {
+		return fmt.Errorf("%s: %w", op, storage.ErrAdminNotFound)
+	}
+	return nil
+}
+
 func IsDuplicatedKeyError(err error) bool {
 	var perr *pgconn.PgError
 	if errors.As(err, &perr) {

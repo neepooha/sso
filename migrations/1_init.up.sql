@@ -9,8 +9,8 @@ CREATE INDEX IF NOT EXISTS idx_email ON users (email);
 
 CREATE TABLE IF NOT EXISTS admins
 (
-    uid      INTEGER REFERENCES users (id),
-    isAdmin  boolean
+    id      INTEGER REFERENCES users (id) UNIQUE,
+    isAdmin  boolean DEFAULT true
 );
 
 CREATE TABLE IF NOT EXISTS apps

@@ -19,10 +19,10 @@ func main() {
 	cfg := config.MustLoad()
 
 	log := setupLogger(cfg.Env)
-	log.Info("starting sso", slog.String("env", cfg.Env), slog.String("port", cfg.Port))
-	log.Debug("debug messages are enabled")
+	log.Info("starting sso", slog.String("env", cfg.Env))
+	log.Debug("credentials", slog.String("host", cfg.GRPC.Host), slog.String("port", cfg.GRPC.Port))
 
-	application := app.New(log, cfg.Host, cfg.Port, cfg.StoragePath, cfg.TokenTTL)
+	application := app.New(log, cfg)
 	go application.GRPCSrv.MustRun()
 
 	stop := make(chan os.Signal, 1)

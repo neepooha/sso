@@ -3,15 +3,35 @@
 version: "3"
 
 tasks:
+  up:
+    aliases:
+      - up
+    desc: "up migrations"
+    cmds: 
+      - migrate -source file://./migrations/ -database postgres://myuser:mypass@0.0.0.0:5432/auth?sslmode=disable up
+  rollback:
+    aliases:
+      - down
+    desc: "down migrations"
+    cmds: 
+      - migrate -source file://./migrations/ -database postgres://myuser:mypass@0.0.0.0:5432/auth?sslmode=disable down
+  drop:
+    aliases:
+      - migrations_test
+    desc: "run test migrations"
+    cmds: 
+     - migrate -source file://./migrations/ -database postgres://myuser:mypass@0.0.0.0:5432/auth?sslmode=disable drop
   generate:
     aliases:
-      - migrations
+      - migrate
     desc: "run migrations"
     cmds: 
-      - go run ./cmd/migrator/ --storage-path=./storage/sso.db --migrations-path=./migrations
+      - go run ./cmd/migrator/ --url=myuser:mypass@0.0.0.0:5432 --dbname=auth --migrations-path=./migrations
   generate_test:
     aliases:
       - migrations_test
     desc: "run test migrations"
     cmds: 
       - go run ./cmd/migrator/ --storage-path=./storage/sso.db --migrations-path=./tests/migrations --migrations-table=migrations_test
+
+      # See: https://taskfile.dev/api/

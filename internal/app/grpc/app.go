@@ -23,6 +23,7 @@ func New(log *slog.Logger, authService authgrpc.Auth, host string, port string) 
 	return &App{
 		log:        log,
 		gRPCServer: gRPCServer,
+		host:       host,
 		port:       port,
 	}
 }

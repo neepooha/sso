@@ -13,8 +13,8 @@ import (
 
 type Auth interface {
 	Login(ctx context.Context, email string, password string, appID int) (token string, err error)
-	RegisterNewUser(ctx context.Context, email string, password string) (userID int64, err error)
-	IsAdmin(ctx context.Context, userID int64) (bool, error)
+	RegisterNewUser(ctx context.Context, email string, password string) (userID uint64, err error)
+	IsAdmin(ctx context.Context, userID uint64) (bool, error)
 }
 
 type serverAPI struct {
@@ -62,7 +62,7 @@ func (s *serverAPI) IsAdmin(ctx context.Context, req *ssov1.IsAdminRequest) (*ss
 	if req.GetUserId() == emptyValue {
 		return nil, status.Error(codes.Internal, "user_ID is required")
 	}
-	isadmin, err := s.auth.IsAdmin(ctx, int64(req.GetUserId()))
+	isadmin, err := s.auth.IsAdmin(ctx, req.GetUserId())
 	if err != nil {
 		if errors.Is(err, auth.ErrUserNotFound) {
 			return nil, status.Error(codes.InvalidArgument, "user not found")

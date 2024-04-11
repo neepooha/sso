@@ -6,26 +6,27 @@ import (
 	"fmt"
 
 	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/jackc/pgx/v5/pgconn"
 )
 
 func main() {
-	var storagePath, migrationsPath, migrationsTable string
-	flag.StringVar(&storagePath, "storage-path", "", "path to storage")
+	var url, dbname, migrationsPath, migrationsTable string
+	flag.StringVar(&url, "url", "", "path to storage")
+	flag.StringVar(&dbname, "dbname", "", "name of database")
 	flag.StringVar(&migrationsPath, "migrations-path", "", "path to migrations")
-	flag.StringVar(&migrationsTable, "migrations-table", "", "name of migrations table")
+	flag.StringVar(&migrationsTable, "migrations-table", "", "path to migrations table")
 	flag.Parse()
 
-	if storagePath == "" {
-		panic("storage-path is required")
+	if url == "" {
+		panic("url is required")
 	}
 	if migrationsPath == "" {
 		panic("migrationsPath-path is required")
 	}
 
-	m, err := migrate.New("file://"+migrationsPath, fmt.Sprintf("sqlite3://%s?x-migratioins-table=%s", storagePath, migrationsTable))
+	m, err := migrate.New("file://"+migrationsPath, fmt.Sprintf("postgres://%s/%s?sslmode=disable&&?x-migrations-table=%s", url, dbname, migrationsTable))
 	if err != nil {
 		panic(err)
 	}

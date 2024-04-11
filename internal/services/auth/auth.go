@@ -23,12 +23,12 @@ type Auth struct {
 }
 
 type UserSaver interface {
-	SaveUser(ctx context.Context, email string, passHash []byte) (uid int64, err error)
+	SaveUser(ctx context.Context, email string, passHash []byte) (uid uint64, err error)
 }
 
 type UserProvider interface {
 	GetUser(ctx context.Context, email string) (models.User, error)
-	IsAdmin(ctx context.Context, userID int64) (bool, error)
+	IsAdmin(ctx context.Context, userID uint64) (bool, error)
 }
 
 type AppProvider interface {
@@ -93,7 +93,7 @@ func (a *Auth) Login(ctx context.Context, email string, password string, appID i
 }
 
 // RegisterNewUser registers new user in the system and returns userID
-func (a *Auth) RegisterNewUser(ctx context.Context, email string, password string) (int64, error) {
+func (a *Auth) RegisterNewUser(ctx context.Context, email string, password string) (uint64, error) {
 	const op = "auth.RegisterNewUser"
 	log := a.log.With(slog.String("op", op))
 
@@ -107,7 +107,7 @@ func (a *Auth) RegisterNewUser(ctx context.Context, email string, password strin
 	id, err := a.userSaver.SaveUser(ctx, email, passHash)
 	if err != nil {
 		if errors.Is(err, storage.ErrUserExists) {
-			log.Error("user already exists", sl.Err(err))
+			log.Warn("user already exists", sl.Err(err))
 			return 0, fmt.Errorf("%s:%w", op, ErrUserExists)
 		}
 		log.Error("failed to save user", sl.Err(err))
@@ -119,7 +119,7 @@ func (a *Auth) RegisterNewUser(ctx context.Context, email string, password strin
 }
 
 // IsAdmin checks if user is admin
-func (a *Auth) IsAdmin(ctx context.Context, userID int64) (bool, error) {
+func (a *Auth) IsAdmin(ctx context.Context, userID uint64) (bool, error) {
 	const op = "auth.IsAdmin"
 	log := a.log.With(slog.String("op", op))
 

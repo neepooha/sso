@@ -8,7 +8,7 @@ import (
 	"sso/internal/domain/models"
 	"sso/internal/storage"
 
-	"github.com/mattn/go-sqlite3"
+	"modernc.org/sqlite"
 )
 
 type Storage struct {
@@ -17,14 +17,14 @@ type Storage struct {
 
 func New(storagePath string) (*Storage, error) {
 	const op = "storage.sqlite.new"
-	db, err := sql.Open("sqlite3", storagePath)
+	db, err := sql.Open("sqlite", storagePath)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 	return &Storage{db: db}, nil
 }
 
-func (s *Storage) SaveUser(ctx context.Context, email string, passHash []byte) (int64, error) {
+func (s *Storage) SaveUser(ctx context.Context, email string, passHash []byte) (uint64, error) {
 	const op = "storage.sqlite.SaveUser"
 
 	stmt, err := s.db.Prepare("INSERT INTO users(email, pass_hash) VALUES(?, ?)")
@@ -33,8 +33,9 @@ func (s *Storage) SaveUser(ctx context.Context, email string, passHash []byte) (
 	}
 	res, err := stmt.ExecContext(ctx, email, passHash)
 	if err != nil {
-		sqliteErr, ok := err.(sqlite3.Error)
-		if ok && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
+		sqliteErr, ok := err.(*sqlite.Error)
+		// unique error
+		if ok && sqliteErr.Code() == 2067 {
 			return 0, fmt.Errorf("%s:%w", op, storage.ErrUserExists)
 		}
 		return 0, fmt.Errorf("%s:%w", op, err)
@@ -44,7 +45,7 @@ func (s *Storage) SaveUser(ctx context.Context, email string, passHash []byte) (
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
-	return id, nil
+	return uint64(id), nil
 }
 
 func (s *Storage) GetUser(ctx context.Context, email string) (models.User, error) {
@@ -65,7 +66,7 @@ func (s *Storage) GetUser(ctx context.Context, email string) (models.User, error
 	return user, nil
 }
 
-func (s *Storage) IsAdmin(ctx context.Context, userID int64) (bool, error) {
+func (s *Storage) IsAdmin(ctx context.Context, userID uint64) (bool, error) {
 	const op = "storage.sqlite.IsAdmin"
 
 	stmt, err := s.db.Prepare("SELECT is_admin FROM users WHERE id=?")

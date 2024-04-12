@@ -7,10 +7,6 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 
-FROM base as build-migrate
-CMD [ "go run ./cmd/migrator/ --url=myuser:mypass@ssodb:5432 --dbname=auth --migrations-path=./migrations" ] 
-
-FROM base as build-sso
 RUN go build -o sso ./cmd/sso/main.go
-EXPOSE 44044
+EXPOSE 44044 
 ENTRYPOINT [ "./sso" ]

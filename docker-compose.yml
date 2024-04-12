@@ -1,6 +1,22 @@
 version: '3.8'
 
 services:
+  ssodb:
+    image: postgres:latest
+    container_name: ssoDB
+    hostname: ssodb
+    env_file:
+      - ./config.env
+    networks:
+      - ssonet
+    volumes:
+      - postgresql_ssodb:/var/lib/postgresql/ssodb
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}'"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
   sso:
     depends_on: 
       ssodb:
@@ -17,25 +33,10 @@ services:
       restart_policy:
         condition: on-failure
 
-  ssodb:
-    image: postgres:latest
-    container_name: ssoDB
-    hostname: ssodb
-    env_file:
-      - ./config.env
-    networks:
-      - ssonet
-    volumes:
-      - postgresql_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "sh -c 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}'"]
-      interval: 5s
-      timeout: 10s
-      retries: 5
-      start_period: 10s
+  
 
 volumes:
-  postgresql_data:
+  postgresql_ssodb:
 
 networks:
   ssonet:

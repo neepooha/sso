@@ -5,6 +5,7 @@ storage:
   dbname: "auth"
   user: "myuser"
   password: "mypass"
+  migrations_path: "./migrations"
 token_ttl: 1h
 grpc:
   host: "localhost"

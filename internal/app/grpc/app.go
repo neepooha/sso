@@ -44,7 +44,7 @@ func (a *App) run() error {
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
-	log.Info("gRPC server is running", slog.String("adress", l.Addr().String()))
+	log.Info("gRPC server is running", slog.String("address", l.Addr().String()))
 
 	if err := a.gRPCServer.Serve(l); err != nil {
 		return fmt.Errorf("%s: %w", op, err)

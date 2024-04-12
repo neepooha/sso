@@ -25,12 +25,11 @@ func Register(gRPC *grpc.Server, perm Perm) {
 	ssov1.RegisterPermissionsServer(gRPC, &serverAPI{perm: perm})
 }
 
-const emptyValue = 0
-
 func (s *serverAPI) SetAdmin(ctx context.Context, req *ssov1.SetAdminRequest) (*ssov1.SetAdminResponse, error) {
-	if err := ValidateSetAdmin(req); err != nil {
-		return nil, err
+	if req.GetEmail() == "" {
+		return nil, status.Error(codes.InvalidArgument, "email is required")
 	}
+
 	setAdmin, err := s.perm.SetAdmin(ctx, req.GetEmail())
 	if err != nil {
 		if errors.Is(err, perm.ErrInvalidCredentials) {
@@ -43,8 +42,8 @@ func (s *serverAPI) SetAdmin(ctx context.Context, req *ssov1.SetAdminRequest) (*
 }
 
 func (s *serverAPI) DelAdmin(ctx context.Context, req *ssov1.DelAdminRequest) (*ssov1.DelAdminResponse, error) {
-	if err := ValidateDelAdmin(req); err != nil {
-		return nil, err
+	if req.GetEmail() == "" {
+		return nil, status.Error(codes.InvalidArgument, "email is required")
 	}
 
 	delAdmin, err := s.perm.DelAdmin(ctx, req.GetEmail())
@@ -56,18 +55,4 @@ func (s *serverAPI) DelAdmin(ctx context.Context, req *ssov1.DelAdminRequest) (*
 	}
 
 	return &ssov1.DelAdminResponse{DelAdmin: delAdmin}, nil
-}
-
-func ValidateSetAdmin(req *ssov1.SetAdminRequest) error {
-	if req.GetEmail() == "" {
-		return status.Error(codes.InvalidArgument, "email is required")
-	}
-	return nil
-}
-
-func ValidateDelAdmin(req *ssov1.DelAdminRequest) error {
-	if req.GetEmail() == "" {
-		return status.Error(codes.InvalidArgument, "email is required")
-	}
-	return nil
 }

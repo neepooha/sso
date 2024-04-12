@@ -8,7 +8,7 @@ tasks:
       - up
     desc: "up migrations"
     cmds: 
-      - migrate -source file://./migrations/ -database postgres://myuser:mypass@0.0.0.0:5432/auth?sslmode=disable up
+      - migrate -source file://./migrations/ -database postgres://postgres:mypass@localhost:5432/auth?sslmode=disable up
   rollback:
     aliases:
       - down
@@ -26,7 +26,7 @@ tasks:
       - migrate
     desc: "run migrations"
     cmds: 
-      - go run ./cmd/migrator/ --url=myuser:mypass@0.0.0.0:5432 --dbname=auth --migrations-path=./migrations
+      - go run ./cmd/migrator/ --url=postgres:mypass@0.0.0.0:5431 --dbname=auth --migrations-path=./migrations
   generate_test:
     aliases:
       - migrations_test

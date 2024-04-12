@@ -8,7 +8,7 @@ RUN go mod download
 COPY . .
 
 FROM base as build-migrate
-CMD [ "go run ./cmd/migrator/main.go" ] 
+CMD [ "go run ./cmd/migrator/ --url=postgres:mypass@ssodb:5432 --dbname=auth --migrations-path=./migrations" ] 
 
 FROM base as build-sso
 RUN go build -o sso ./cmd/sso/main.go

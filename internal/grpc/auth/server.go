@@ -3,8 +3,11 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sso/internal/services/auth"
+	"strings"
 
+	"github.com/go-playground/validator/v10"
 	ssov1 "github.com/neepooha/protos/gen/go/sso"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -27,6 +30,17 @@ func Register(gRPC *grpc.Server, auth Auth) {
 }
 
 const emptyValue = 0
+
+type LoginRequest struct {
+	Email string `validate:"required,email"`
+	Pass  string `validate:"required"`
+	AppId int32  `validate:"required"`
+}
+
+type RegisterRequest struct {
+	Email string `validate:"required,email"`
+	Pass  string `validate:"required,len=8"`
+}
 
 func (s *serverAPI) Login(ctx context.Context, req *ssov1.LoginRequest) (*ssov1.LoginResponse, error) {
 	if err := ValidateLogin(req); err != nil {
@@ -73,26 +87,43 @@ func (s *serverAPI) IsAdmin(ctx context.Context, req *ssov1.IsAdminRequest) (*ss
 }
 
 func ValidateLogin(req *ssov1.LoginRequest) error {
-	if req.GetEmail() == "" {
-		return status.Error(codes.InvalidArgument, "email is required")
-	}
+	var loginReq LoginRequest
+	loginReq.Email = req.GetEmail()
+	loginReq.Pass = req.GetPassword()
+	loginReq.AppId = req.GetAppId()
 
-	if req.GetPassword() == "" {
-		return status.Error(codes.InvalidArgument, "password is required")
-	}
-
-	if req.GetAppId() == emptyValue {
-		return status.Error(codes.InvalidArgument, "app_id is required")
+	if err := validator.New().Struct(loginReq); err != nil {
+		validateErr := err.(validator.ValidationErrors)
+		return ValidationError(validateErr)
 	}
 	return nil
 }
 
 func ValidateRegister(req *ssov1.RegisterRequest) error {
-	if req.GetEmail() == "" {
-		return status.Error(codes.InvalidArgument, "email is required")
-	}
-	if req.GetPassword() == "" {
-		return status.Error(codes.InvalidArgument, "password is required")
+	var loginReq LoginRequest
+	loginReq.Email = req.GetEmail()
+	loginReq.Pass = req.GetPassword()
+
+	if err := validator.New().Struct(loginReq); err != nil {
+		validateErr := err.(validator.ValidationErrors)
+		return ValidationError(validateErr)
 	}
 	return nil
+}
+
+func ValidationError(errs validator.ValidationErrors) error {
+	var errMsgs []string
+
+	for _, err := range errs {
+		switch err.ActualTag() {
+		case "required":
+			errMsgs = append(errMsgs, fmt.Sprintf("field %s is a required field", err.Field()))
+		case "email":
+			errMsgs = append(errMsgs, fmt.Sprintf("field %s is not a valid email", err.Field()))
+		default:
+			errMsgs = append(errMsgs, fmt.Sprintf("field %s is not valid", err.Field()))
+		}
+	}
+
+	return errors.New(strings.Join(errMsgs, ", "))
 }

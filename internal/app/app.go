@@ -11,6 +11,7 @@ import (
 
 type App struct {
 	GRPCSrv *grpcapp.App
+	Storage *postgres.Storage
 }
 
 func New(log *slog.Logger, cfg *config.Config) *App {
@@ -23,5 +24,5 @@ func New(log *slog.Logger, cfg *config.Config) *App {
 	permServer := perm.New(log, storage)
 
 	grpcApp := grpcapp.New(log, authServer, permServer, cfg.GRPC.Host, cfg.GRPC.Port)
-	return &App{GRPCSrv: grpcApp}
+	return &App{GRPCSrv: grpcApp, Storage: storage}
 }

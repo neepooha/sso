@@ -12,7 +12,7 @@ import (
 
 const (
 	envlocal = "local"
-	envDev = "dev"
+	envDev   = "dev"
 	envProd  = "prod"
 )
 
@@ -31,7 +31,7 @@ func main() {
 	call := <-stop
 	log.Info("stopping application", slog.String("signal", call.String()))
 	application.GRPCSrv.Stop()
-
+	application.Storage.Close()
 	log.Info("application stopped")
 }
 

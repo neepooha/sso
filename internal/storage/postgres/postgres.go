@@ -19,8 +19,7 @@ type Storage struct {
 func New(cfg *config.Config) (*Storage, error) {
 	const op = "storage.postgres.NewStorage"
 
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
-		"password=	%s dbname=%s sslmode=disable",
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		cfg.Storage.Host, cfg.Storage.Port, cfg.Storage.User, cfg.Storage.Password, cfg.Storage.Dbname)
 
 	db, err := pgxpool.New(context.Background(), psqlInfo)
@@ -30,6 +29,11 @@ func New(cfg *config.Config) (*Storage, error) {
 
 	return &Storage{db: db}, nil
 }
+
+func (s *Storage) Close(){
+	s.db.Close()
+}
+
 
 func (s *Storage) SaveUser(ctx context.Context, email string, passHash []byte) (uint64, error) {
 	const op = "storage.postgres.SaveUser"
@@ -143,7 +147,7 @@ func (s *Storage) DelAdmin(ctx context.Context, email string) (error) {
 }
 
 func IsDuplicatedKeyError(err error) bool {
-	var perr *pgconn.PgError
+	var perr pgconn.PgError
 	if errors.As(err, &perr) {
 		return perr.Code == "23505" // error code of duplicate
 	}

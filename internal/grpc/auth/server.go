@@ -100,11 +100,11 @@ func ValidateLogin(req *ssov1.LoginRequest) error {
 }
 
 func ValidateRegister(req *ssov1.RegisterRequest) error {
-	var loginReq LoginRequest
-	loginReq.Email = req.GetEmail()
-	loginReq.Pass = req.GetPassword()
+	var regiserReq RegisterRequest
+	regiserReq.Email = req.GetEmail()
+	regiserReq.Pass = req.GetPassword()
 
-	if err := validator.New().Struct(loginReq); err != nil {
+	if err := validator.New().Struct(regiserReq); err != nil {
 		validateErr := err.(validator.ValidationErrors)
 		return ValidationError(validateErr)
 	}
@@ -121,7 +121,7 @@ func ValidationError(errs validator.ValidationErrors) error {
 		case "email":
 			errMsgs = append(errMsgs, fmt.Sprintf("field %s is not a valid email", err.Field()))
 		default:
-			errMsgs = append(errMsgs, fmt.Sprintf("field %s is not valid", err.Field()))
+			errMsgs = append(errMsgs, fmt.Sprintf("field %s is not a valid", err.Field()))
 		}
 	}
 

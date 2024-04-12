@@ -21,7 +21,7 @@ func main() {
 
 	log := setupLogger(cfg.Env)
 	log.Info("starting sso", slog.String("env", cfg.Env))
-	log.Debug("credentials", slog.String("host", cfg.GRPC.Host), slog.String("port", cfg.GRPC.Port))
+	log.Debug("credentials sso", slog.String("host", cfg.GRPC.Host), slog.String("port", cfg.GRPC.Port))
 
 	application := app.New(log, cfg)
 	go application.GRPCSrv.MustRun()

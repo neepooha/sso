@@ -8,6 +8,7 @@ import (
 	"sso/internal/domain/models"
 	"sso/internal/storage"
 
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -30,24 +31,24 @@ func New(cfg *config.Config) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-func (s *Storage) Close(){
+func (s *Storage) Close() {
 	s.db.Close()
 }
-
 
 func (s *Storage) SaveUser(ctx context.Context, email string, passHash []byte) (uint64, error) {
 	const op = "storage.postgres.SaveUser"
 
 	stmt := `INSERT INTO users (email, pass_hash) VALUES($1, $2) RETURNING id`
-	lastInsertId := 0
+	var lastInsertId uint64
 	err := s.db.QueryRow(ctx, stmt, email, passHash).Scan(&lastInsertId)
 	if err != nil {
-		if IsDuplicatedKeyError(err) {
-			return 0, fmt.Errorf("%s: %w", op, storage.ErrUserExists)
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+			return 0, fmt.Errorf("%s1: %w", op, storage.ErrUserExists)
 		}
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
-	return uint64(lastInsertId), nil
+	return lastInsertId, nil
 }
 
 func (s *Storage) GetUser(ctx context.Context, email string) (models.User, error) {
@@ -68,13 +69,13 @@ func (s *Storage) GetUser(ctx context.Context, email string) (models.User, error
 
 func (s *Storage) IsAdmin(ctx context.Context, userID uint64) (bool, error) {
 	const op = "storage.postgres.IsAdmin"
-	stmt := `SELECT isAdmin FROM admins WHERE uid = $1`
+	stmt := `SELECT isAdmin FROM admins WHERE id = $1`
 
 	var isadmin bool
 	err := s.db.QueryRow(ctx, stmt, userID).Scan(&isadmin)
 	if err != nil {
 		if IsNotFoundError(err) {
-			return false, fmt.Errorf("%s: %w", op, storage.ErrUserNotFound)
+			return false, fmt.Errorf("%s: %w", op, storage.ErrAdminNotFound)
 		}
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
@@ -121,7 +122,7 @@ func (s *Storage) SetAdmin(ctx context.Context, email string) error {
 	return nil
 }
 
-func (s *Storage) DelAdmin(ctx context.Context, email string) (error) {
+func (s *Storage) DelAdmin(ctx context.Context, email string) error {
 	const op = "storage.postgres.DelAdmin"
 
 	stmt := `SELECT id FROM users WHERE email = $1`
@@ -147,9 +148,9 @@ func (s *Storage) DelAdmin(ctx context.Context, email string) (error) {
 }
 
 func IsDuplicatedKeyError(err error) bool {
-	var perr pgconn.PgError
-	if errors.As(err, &perr) {
-		return perr.Code == "23505" // error code of duplicate
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+		return true
 	}
 	return false
 }

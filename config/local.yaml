@@ -3,7 +3,7 @@ storage:
   host: "localhost"
   port: 5432
   dbname: "auth"
-  user: "postgres"
+  user: "myuser"
   password: "mypass"
 token_ttl: 1h
 grpc:

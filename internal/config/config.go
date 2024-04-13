@@ -18,9 +18,9 @@ type Config struct {
 type Storage struct {
 	Host            string `yaml:"host" env-required:"true"`
 	Port            string `yaml:"port" env-required:"true"`
-	User            string `yaml:"user" env-required:"true"`
-	Dbname          string `yaml:"dbname" env-required:"true"`
-	Password        string `yaml:"password" env-required:"true"`
+	Dbname          string `yaml:"dbname" env-required:"true" env:"POSTGRES_DB"`
+	User            string `yaml:"user" env-required:"true" env:"POSTGRES_USER"`
+	Password        string `yaml:"password" env-required:"true" env:"POSTGRES_PASSWORD"`
 	Migrations_path string `yaml:"migrations_path" env-required:"true"`
 }
 

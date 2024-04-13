@@ -1,7 +1,10 @@
 env: "prod"
-storage_path: "./storage/sso.db"
-token_ttl: 1h
+storage:
+  host: "ssodb"
+  port: 5432
+  migrations_path: "./migrations"
+token_ttl: 72h
 grpc:
-  host: 172.17.2.169
+  host: "sso"
   port: 44044
-  timeout: 10s
+  timeout: 10s  

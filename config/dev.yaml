@@ -8,6 +8,6 @@ storage:
   migrations_path: "./migrations"
 token_ttl: 1h
 grpc:
-  host: "sso-server"
+  host: "sso"
   port: 44044
-  timeout: 10s
+  timeout: 10s  

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
-	ssov1 "github.com/neepooha/protos/gen/go/sso"
+	ssov2 "github.com/neepooha/protos/gen/go/sso"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -17,16 +17,15 @@ import (
 type Auth interface {
 	Login(ctx context.Context, email string, password string, appID int) (token string, err error)
 	RegisterNewUser(ctx context.Context, email string, password string) (userID uint64, err error)
-	IsAdmin(ctx context.Context, userID uint64) (bool, error)
 }
 
 type serverAPI struct {
-	ssov1.UnimplementedAuthServer
+	ssov2.UnimplementedAuthServer
 	auth Auth
 }
 
 func Register(gRPC *grpc.Server, auth Auth) {
-	ssov1.RegisterAuthServer(gRPC, &serverAPI{auth: auth})
+	ssov2.RegisterAuthServer(gRPC, &serverAPI{auth: auth})
 }
 
 const emptyValue = 0
@@ -42,7 +41,7 @@ type RegisterRequest struct {
 	Pass  string `validate:"required,len=8"`
 }
 
-func (s *serverAPI) Login(ctx context.Context, req *ssov1.LoginRequest) (*ssov1.LoginResponse, error) {
+func (s *serverAPI) Login(ctx context.Context, req *ssov2.LoginRequest) (*ssov2.LoginResponse, error) {
 	if err := ValidateLogin(req); err != nil {
 		return nil, err
 	}
@@ -55,10 +54,10 @@ func (s *serverAPI) Login(ctx context.Context, req *ssov1.LoginRequest) (*ssov1.
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
-	return &ssov1.LoginResponse{Token: token}, nil
+	return &ssov2.LoginResponse{Token: token}, nil
 }
 
-func (s *serverAPI) Register(ctx context.Context, req *ssov1.RegisterRequest) (*ssov1.RegisterResponse, error) {
+func (s *serverAPI) Register(ctx context.Context, req *ssov2.RegisterRequest) (*ssov2.RegisterResponse, error) {
 	if err := ValidateRegister(req); err != nil {
 		return nil, err
 	}
@@ -69,24 +68,10 @@ func (s *serverAPI) Register(ctx context.Context, req *ssov1.RegisterRequest) (*
 		}
 		return nil, status.Error(codes.Internal, "internal error")
 	}
-	return &ssov1.RegisterResponse{UserId: userID}, nil
+	return &ssov2.RegisterResponse{UserId: userID}, nil
 }
 
-func (s *serverAPI) IsAdmin(ctx context.Context, req *ssov1.IsAdminRequest) (*ssov1.IsAdminResponse, error) {
-	if req.GetUserId() == emptyValue {
-		return nil, status.Error(codes.Internal, "user_ID is required")
-	}
-	isadmin, err := s.auth.IsAdmin(ctx, req.GetUserId())
-	if err != nil {
-		if errors.Is(err, auth.ErrUserNotFound) {
-			return nil, status.Error(codes.InvalidArgument, "user not found")
-		}
-		return nil, status.Error(codes.Internal, "internal error")
-	}
-	return &ssov1.IsAdminResponse{IsAdmin: isadmin}, nil
-}
-
-func ValidateLogin(req *ssov1.LoginRequest) error {
+func ValidateLogin(req *ssov2.LoginRequest) error {
 	var loginReq LoginRequest
 	loginReq.Email = req.GetEmail()
 	loginReq.Pass = req.GetPassword()
@@ -99,7 +84,7 @@ func ValidateLogin(req *ssov1.LoginRequest) error {
 	return nil
 }
 
-func ValidateRegister(req *ssov1.RegisterRequest) error {
+func ValidateRegister(req *ssov2.RegisterRequest) error {
 	var regiserReq RegisterRequest
 	regiserReq.Email = req.GetEmail()
 	regiserReq.Pass = req.GetPassword()

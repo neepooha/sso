@@ -34,7 +34,7 @@ func New(log *slog.Logger, cfg *config.Config) *App {
 	log.Debug("migrations applied successfully")
 
 	authServer := auth.New(log, storage, storage, storage, cfg.TokenTTL)
-	permServer := perm.New(log, storage)
+	permServer := perm.New(log, storage, storage)
 
 	grpcApp := grpcapp.New(log, authServer, permServer, cfg.GRPC.Host, cfg.GRPC.Port)
 	return &App{GRPCSrv: grpcApp, Storage: storage}

@@ -67,20 +67,33 @@ func (s *Storage) GetUser(ctx context.Context, email string) (models.User, error
 	return user, nil
 }
 
-func (s *Storage) IsAdmin(ctx context.Context, userID uint64) (bool, error) {
+func (s *Storage) IsAdmin(ctx context.Context, userID uint64, appID int) (bool, error) {
 	const op = "storage.postgres.IsAdmin"
-	stmt := `SELECT isAdmin FROM admins WHERE id = $1`
-
-	var isadmin bool
-	err := s.db.QueryRow(ctx, stmt, userID).Scan(&isadmin)
+	stmt := `SELECT FROM admins WHERE uid = $1 AND app_id = $2`
+	err := s.db.QueryRow(ctx, stmt, userID, appID).Scan()
 	if err != nil {
 		if IsNotFoundError(err) {
 			return false, fmt.Errorf("%s: %w", op, storage.ErrAdminNotFound)
 		}
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
-	return isadmin, nil
+	return true, nil
 }
+
+func (s *Storage) IsCreator(ctx context.Context, userID uint64, appID int) (bool, error) {
+	const op = "storage.postgres.IsCreator"
+
+	stmt := `SELECT FROM creators WHERE uid = $1 AND app_id = $2`
+	err := s.db.QueryRow(ctx, stmt, userID, appID).Scan()
+	if err != nil {
+		if IsNotFoundError(err) {
+			return false, fmt.Errorf("%s: %w", op, storage.ErrCreatorNotFound)
+		}
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+	return true, nil
+}
+
 
 func (s *Storage) App(ctx context.Context, appID int) (models.App, error) {
 	const op = "storage.postgres.App"
@@ -97,7 +110,7 @@ func (s *Storage) App(ctx context.Context, appID int) (models.App, error) {
 	return app, nil
 }
 
-func (s *Storage) SetAdmin(ctx context.Context, email string) error {
+func (s *Storage) SetAdmin(ctx context.Context, email string, appID int) error {
 	const op = "storage.postgres.SetAdmin"
 
 	stmt := `SELECT id FROM users WHERE email = $1`
@@ -110,19 +123,33 @@ func (s *Storage) SetAdmin(ctx context.Context, email string) error {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	stmt = `INSERT INTO admins (id) VALUES ($1)`
-	_, err = s.db.Exec(ctx, stmt, uid)
+	stmt = `SELECT FROM apps WHERE id = $1`
+	err = s.db.QueryRow(ctx, stmt, uid).Scan()
 	if err != nil {
-		if IsDuplicatedKeyError(err) {
+		if IsNotFoundError(err) {
+			return fmt.Errorf("%s: %w", op, storage.ErrAppNotFound)
+		}
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	stmt = `SELECT FROM admins WHERE uid = $1 AND app_id = $2`
+	err = s.db.QueryRow(ctx, stmt, uid, appID).Scan()
+	if err != nil {
+		if !IsNotFoundError(err) {
 			return fmt.Errorf("%s: %w", op, storage.ErrAdminExists)
 		}
+	}
+
+	stmt = `INSERT INTO admins (uid, app_id) VALUES ($1, $2)`
+	_, err = s.db.Exec(ctx, stmt, uid, appID)
+	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	return nil
 }
 
-func (s *Storage) DelAdmin(ctx context.Context, email string) error {
+func (s *Storage) DelAdmin(ctx context.Context, email string, appID int) error {
 	const op = "storage.postgres.DelAdmin"
 
 	stmt := `SELECT id FROM users WHERE email = $1`
@@ -135,14 +162,29 @@ func (s *Storage) DelAdmin(ctx context.Context, email string) error {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	stmt = `DELETE FROM admins WHERE id = $1`
-	res, err := s.db.Exec(ctx, stmt, uid)
+	stmt = `SELECT id FROM apps WHERE id = $1`
+	var app_id int
+	err = s.db.QueryRow(ctx, stmt, appID).Scan(&app_id)
 	if err != nil {
+		if IsNotFoundError(err) {
+			return fmt.Errorf("%s: %w", op, storage.ErrAppNotFound)
+		}
 		return fmt.Errorf("%s: %w", op, err)
 	}
-	affect := res.RowsAffected()
-	if affect == 0 {
-		return fmt.Errorf("%s: %w", op, storage.ErrAdminNotFound)
+
+	stmt = `SELECT FROM admins WHERE uid = $1 AND app_id = $2`
+	err = s.db.QueryRow(ctx, stmt, uid, app_id).Scan()
+	if err != nil {
+		if IsNotFoundError(err) {
+			return fmt.Errorf("%s: %w", op, storage.ErrAdminNotFound)
+		}
+		return fmt.Errorf("%s1: %w", op, err)
+	}
+
+	stmt = `DELETE FROM admins WHERE uid = $1 AND app_id = $2`
+	_, err = s.db.Exec(ctx, stmt, uid, app_id)
+	if err != nil {
+		return fmt.Errorf("%s2: %w", op, err)
 	}
 	return nil
 }

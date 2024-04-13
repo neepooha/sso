@@ -3,10 +3,20 @@ ARG GO_VERSION=1.22.1
 FROM golang:${GO_VERSION}-alpine AS base
 WORKDIR /apps/sso
 
-COPY go.mod go.sum ./
-RUN go mod download
-COPY . .
+RUN --mount=type=cache,target=/go/pkg/mod/ \
+--mount=type=bind,source=go.sum,target=go.sum \
+--mount=type=bind,source=go.mod,target=go.mod \
+go mod download -x
 
-RUN go build -o sso ./cmd/sso/main.go
+FROM base AS build-sso
+RUN --mount=type=cache,target=/go/pkg/mod/ \
+    --mount=type=bind,target=. \
+    go build -o /sso ./cmd/sso/main.go
+
+FROM scratch AS server
+COPY ./config.env ./
+COPY ./config ./config
+COPY ./migrations ./migrations
+COPY --from=build-sso /sso ./
 EXPOSE 44044 
 ENTRYPOINT [ "./sso" ]

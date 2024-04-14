@@ -47,8 +47,6 @@ func Register(gRPC *grpc.Server, perm Perm) {
 	ssov2.RegisterPermissionsServer(gRPC, &serverAPI{perm: perm})
 }
 
-const emptyValue = 0
-
 func (s *serverAPI) IsAdmin(ctx context.Context, req *ssov2.IsAdminRequest) (*ssov2.IsAdminResponse, error) {
 	if err := ValidateIsAdm(req); err != nil {
 		return nil, err
@@ -139,7 +137,8 @@ func (s *serverAPI) DelAdmin(ctx context.Context, req *ssov2.DelAdminRequest) (*
 
 func exractToken(ctx context.Context) (string, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
+	fmt.Println(ctx, md)
+	if !ok {	
 		return "", status.Error(codes.Unauthenticated, "no headers in request")
 	}
 	authHeaders, ok := md["authorization"]

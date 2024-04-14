@@ -21,7 +21,7 @@ func New(log *slog.Logger, authService authgrpc.Auth, permService permgrpc.Perm,
 	gRPCServer := grpc.NewServer()
 	authgrpc.Register(gRPCServer, authService)
 	permgrpc.Register(gRPCServer, permService)
-
+	
 	return &App{
 		log:        log,
 		gRPCServer: gRPCServer,

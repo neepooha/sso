@@ -15,8 +15,9 @@ import (
 )
 
 type Auth interface {
-	Login(ctx context.Context, email string, password string, appID int) (token string, err error)
+	Login(ctx context.Context, email string, password string, appName string) (token string, err error)
 	RegisterNewUser(ctx context.Context, email string, password string) (userID uint64, err error)
+	GetUserID(ctx context.Context, email string) (userID uint64, err error)
 }
 
 type serverAPI struct {
@@ -28,17 +29,19 @@ func Register(gRPC *grpc.Server, auth Auth) {
 	ssov2.RegisterAuthServer(gRPC, &serverAPI{auth: auth})
 }
 
-const emptyValue = 0
-
 type LoginRequest struct {
-	Email string `validate:"required,email"`
-	Pass  string `validate:"required"`
-	AppId int32  `validate:"required"`
+	Email   string `validate:"required,email"`
+	Pass    string `validate:"required"`
+	AppName string `validate:"required"`
 }
 
 type RegisterRequest struct {
 	Email string `validate:"required,email"`
-	Pass  string `validate:"required,len=8"`
+	Pass  string `validate:"required,gt=7"`
+}
+
+type GetUserIDRequest struct {
+	Email string `validate:"required,email"`
 }
 
 func (s *serverAPI) Login(ctx context.Context, req *ssov2.LoginRequest) (*ssov2.LoginResponse, error) {
@@ -46,7 +49,7 @@ func (s *serverAPI) Login(ctx context.Context, req *ssov2.LoginRequest) (*ssov2.
 		return nil, err
 	}
 
-	token, err := s.auth.Login(ctx, req.GetEmail(), req.GetPassword(), int(req.GetAppId()))
+	token, err := s.auth.Login(ctx, req.GetEmail(), req.GetPassword(), req.GetAppName())
 	if err != nil {
 		if errors.Is(err, auth.ErrInvalidCredentials) {
 			return nil, status.Error(codes.InvalidArgument, "invalid credentials")
@@ -71,11 +74,27 @@ func (s *serverAPI) Register(ctx context.Context, req *ssov2.RegisterRequest) (*
 	return &ssov2.RegisterResponse{UserId: userID}, nil
 }
 
+func (s *serverAPI) GetUserID(ctx context.Context, req *ssov2.GetUserIDRequest) (*ssov2.GetUserIDResponse, error) {
+	if err := ValidateGetUserID(req); err != nil {
+		return nil, err
+	}
+
+	id, err := s.auth.GetUserID(ctx, req.GetEmail())
+	if err != nil {
+		if errors.Is(err, auth.ErrInvalidCredentials) {
+			return nil, status.Error(codes.InvalidArgument, "invalid credentials")
+		}
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+
+	return &ssov2.GetUserIDResponse{UserId: id}, nil
+}
+
 func ValidateLogin(req *ssov2.LoginRequest) error {
 	var loginReq LoginRequest
 	loginReq.Email = req.GetEmail()
 	loginReq.Pass = req.GetPassword()
-	loginReq.AppId = req.GetAppId()
+	loginReq.AppName = req.GetAppName()
 
 	if err := validator.New().Struct(loginReq); err != nil {
 		validateErr := err.(validator.ValidationErrors)
@@ -88,8 +107,18 @@ func ValidateRegister(req *ssov2.RegisterRequest) error {
 	var regiserReq RegisterRequest
 	regiserReq.Email = req.GetEmail()
 	regiserReq.Pass = req.GetPassword()
-
 	if err := validator.New().Struct(regiserReq); err != nil {
+		validateErr := err.(validator.ValidationErrors)
+		return ValidationError(validateErr)
+	}
+	return nil
+}
+
+func ValidateGetUserID(req *ssov2.GetUserIDRequest) error {
+	var loginReq GetUserIDRequest
+	loginReq.Email = req.GetEmail()
+
+	if err := validator.New().Struct(loginReq); err != nil {
 		validateErr := err.(validator.ValidationErrors)
 		return ValidationError(validateErr)
 	}

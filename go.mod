@@ -12,7 +12,7 @@ require (
 	github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438
 	github.com/jackc/pgx/v5 v5.5.5
 	github.com/joho/godotenv v1.5.1
-	github.com/neepooha/protos v0.0.12
+	github.com/neepooha/protos v0.1.15
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/crypto v0.22.0
 	google.golang.org/grpc v1.63.2

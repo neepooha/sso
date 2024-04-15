@@ -7,8 +7,6 @@ import (
 	perm "sso/internal/services/permissions"
 	"strings"
 
-	"google.golang.org/grpc/metadata"
-
 	"github.com/go-playground/validator/v10"
 	ssov2 "github.com/neepooha/protos/gen/go/sso"
 	"google.golang.org/grpc"
@@ -17,25 +15,25 @@ import (
 )
 
 type Perm interface {
-	SetAdmin(ctx context.Context, email string, appID int) (bool, error)
-	DelAdmin(ctx context.Context, email string, appID int) (bool, error)
-	IsAdmin(ctx context.Context, userID uint64, appID int) (bool, error)
-	IsCreator(ctx context.Context, token string, appID int) (bool, error)
+	SetAdmin(ctx context.Context, email string, appName string) (bool, error)
+	DelAdmin(ctx context.Context, email string, appName string) (bool, error)
+	IsAdmin(ctx context.Context, userID uint64, appName string) (bool, error)
+	IsCreator(ctx context.Context, userID uint64, appName string) (bool, error)
 }
 
 type SetDelAdminReq struct {
-	Email string `validate:"required,email"`
-	AppId int32  `validate:"required"`
+	Email   string `validate:"required,email"`
+	AppName string `validate:"required"`
 }
 
 type IsAdmin struct {
-	UserID uint32 `validate:"required"`
-	AppId  int32  `validate:"required"`
+	UserID   uint64 `validate:"required"`
+	AppName string `validate:"required"`
 }
 
 type IsCreator struct {
-	Token string `validate:"required"`
-	AppId int32  `validate:"required"`
+	UserID   uint64 `validate:"required"`
+	AppName string `validate:"required"`
 }
 
 type serverAPI struct {
@@ -52,10 +50,10 @@ func (s *serverAPI) IsAdmin(ctx context.Context, req *ssov2.IsAdminRequest) (*ss
 		return nil, err
 	}
 
-	isadmin, err := s.perm.IsAdmin(ctx, req.GetUserId(), int(req.GetAppId()))
+	isadmin, err := s.perm.IsAdmin(ctx, req.GetUserId(), req.AppName)
 	if err != nil {
-		if errors.Is(err, perm.ErrUserNotFound) {
-			return nil, status.Error(codes.InvalidArgument, "user not found")
+		if errors.Is(err, perm.ErrInvalidCredentials) {
+			return nil, status.Error(codes.InvalidArgument, "invalid credentials")
 		}
 		return nil, status.Error(codes.Internal, "internal error")
 	}
@@ -66,10 +64,10 @@ func (s *serverAPI) IsCreator(ctx context.Context, req *ssov2.IsCreatorRequest) 
 	if err := ValidateIsCreator(req); err != nil {
 		return nil, err
 	}
-	iscreator, err := s.perm.IsCreator(ctx, req.GetToken(), int(req.GetAppId()))
+	iscreator, err := s.perm.IsCreator(ctx, req.GetUserId(), req.GetAppName())
 	if err != nil {
-		if errors.Is(err, perm.ErrUserNotFound) {
-			return nil, status.Error(codes.InvalidArgument, "user not found")
+		if errors.Is(err, perm.ErrInvalidCredentials) {
+			return nil, status.Error(codes.InvalidArgument, "invalid credentials")
 		}
 		return nil, status.Error(codes.Internal, "internal error")
 	}
@@ -81,22 +79,7 @@ func (s *serverAPI) SetAdmin(ctx context.Context, req *ssov2.SetAdminRequest) (*
 		return nil, err
 	}
 
-	tokenStr, err := exractToken(ctx)
-	if err != nil {
-		return nil, err
-	}
-	isCreator, err := s.perm.IsCreator(ctx, tokenStr, int(req.GetAppId()))
-	if err != nil {
-		if errors.Is(err, perm.ErrInvalidCredentials) {
-			return nil, status.Error(codes.InvalidArgument, "invalid credentials")
-		}
-		return nil, err
-	}
-	if !isCreator {
-		return nil, status.Error(codes.PermissionDenied, `u r not creator!`)
-	}
-
-	setAdmin, err := s.perm.SetAdmin(ctx, req.GetEmail(), int(req.GetAppId()))
+	setAdmin, err := s.perm.SetAdmin(ctx, req.GetEmail(), req.GetAppName())
 	if err != nil {
 		if errors.Is(err, perm.ErrInvalidCredentials) {
 			return nil, status.Error(codes.InvalidArgument, "invalid credentials")
@@ -112,19 +95,7 @@ func (s *serverAPI) DelAdmin(ctx context.Context, req *ssov2.DelAdminRequest) (*
 		return nil, err
 	}
 
-	tokenStr, err := exractToken(ctx)
-	if err != nil {
-		return nil, err
-	}
-	isCreator, err := s.perm.IsCreator(ctx, tokenStr, int(req.GetAppId()))
-	if err != nil {
-		return nil, err
-	}
-	if !isCreator {
-		return nil, status.Error(codes.PermissionDenied, `u r not creator!`)
-	}
-
-	delAdmin, err := s.perm.DelAdmin(ctx, req.GetEmail(), int(req.GetAppId()))
+	delAdmin, err := s.perm.DelAdmin(ctx, req.GetEmail(), req.GetAppName())
 	if err != nil {
 		if errors.Is(err, perm.ErrInvalidCredentials) {
 			return nil, status.Error(codes.InvalidArgument, "invalid credentials")
@@ -135,34 +106,10 @@ func (s *serverAPI) DelAdmin(ctx context.Context, req *ssov2.DelAdminRequest) (*
 	return &ssov2.DelAdminResponse{DelAdmin: delAdmin}, nil
 }
 
-func exractToken(ctx context.Context) (string, error) {
-	md, ok := metadata.FromIncomingContext(ctx)
-	fmt.Println(ctx, md)
-	if !ok {	
-		return "", status.Error(codes.Unauthenticated, "no headers in request")
-	}
-	authHeaders, ok := md["authorization"]
-	if !ok {
-		return "", status.Error(codes.Unauthenticated, "no header in request")
-	}
-	if len(authHeaders) != 1 {
-		return "", status.Error(codes.Unauthenticated, "more than 1 header in request")
-	}
-	auth := authHeaders[0]
-	const prefix = "Bearer "
-	if !strings.HasPrefix(auth, prefix) {
-		return "", status.Error(codes.Unauthenticated, `missing "Bearer " prefix in "Authorization" header`)
-	}
-	if auth[len(prefix):] == "" {
-		return "", status.Error(codes.Unauthenticated, `missing token in "Authorization" header`)
-	}
-	return auth[len(prefix):], nil
-}
-
 func ValidateSet(req *ssov2.SetAdminRequest) error {
 	var reqStruct SetDelAdminReq
 	reqStruct.Email = req.GetEmail()
-	reqStruct.AppId = req.GetAppId()
+	reqStruct.AppName = req.GetAppName()
 
 	if err := validator.New().Struct(reqStruct); err != nil {
 		validateErr := err.(validator.ValidationErrors)
@@ -174,7 +121,7 @@ func ValidateSet(req *ssov2.SetAdminRequest) error {
 func ValidateDel(req *ssov2.DelAdminRequest) error {
 	var reqStruct SetDelAdminReq
 	reqStruct.Email = req.GetEmail()
-	reqStruct.AppId = req.GetAppId()
+	reqStruct.AppName = req.GetAppName()
 
 	if err := validator.New().Struct(reqStruct); err != nil {
 		validateErr := err.(validator.ValidationErrors)
@@ -185,8 +132,8 @@ func ValidateDel(req *ssov2.DelAdminRequest) error {
 
 func ValidateIsAdm(req *ssov2.IsAdminRequest) error {
 	var reqStruct IsAdmin
-	reqStruct.UserID = uint32(req.GetUserId())
-	reqStruct.AppId = req.GetAppId()
+	reqStruct.UserID = req.GetUserId()
+	reqStruct.AppName = req.GetAppName()
 
 	if err := validator.New().Struct(reqStruct); err != nil {
 		validateErr := err.(validator.ValidationErrors)
@@ -197,8 +144,8 @@ func ValidateIsAdm(req *ssov2.IsAdminRequest) error {
 
 func ValidateIsCreator(req *ssov2.IsCreatorRequest) error {
 	var reqStruct IsCreator
-	reqStruct.Token = req.GetToken()
-	reqStruct.AppId = req.GetAppId()
+	reqStruct.UserID = req.GetUserId()
+	reqStruct.AppName = req.GetAppName()
 
 	if err := validator.New().Struct(reqStruct); err != nil {
 		validateErr := err.(validator.ValidationErrors)

@@ -31,7 +31,7 @@ type UserProvider interface {
 }
 
 type AppProvider interface {
-	App(ctx context.Context, appID int) (models.App, error)
+	GetApp(ctx context.Context, appName string) (models.App, error)
 }
 
 var (
@@ -52,7 +52,7 @@ func New(log *slog.Logger, userSaver UserSaver, userProvider UserProvider, appPr
 }
 
 // Login checks if user with given credentials exists in the system
-func (a *Auth) Login(ctx context.Context, email string, password string, appID int) (string, error) {
+func (a *Auth) Login(ctx context.Context, email string, password string, appName string) (string, error) {
 	const op = "auth.Login"
 	log := a.log.With(slog.String("op", op))
 
@@ -72,7 +72,7 @@ func (a *Auth) Login(ctx context.Context, email string, password string, appID i
 		return "", fmt.Errorf("%s:%w", op, ErrInvalidCredentials)
 	}
 
-	app, err := a.appProvider.App(ctx, appID)
+	app, err := a.appProvider.GetApp(ctx, appName)
 	if err != nil {
 		if errors.Is(err, storage.ErrAppNotFound) {
 			log.Warn("app not found", sl.Err(err))
@@ -117,3 +117,21 @@ func (a *Auth) RegisterNewUser(ctx context.Context, email string, password strin
 	return id, nil
 }
 
+func (a *Auth) GetUserID(ctx context.Context, email string) (uint64, error) {
+	const op = "auth.GetUserID"
+	log := a.log.With(slog.String("op", op))
+
+	log.Info("attemting to get userID")
+	user, err := a.userProvider.GetUser(ctx, email)
+	if err != nil {
+		if errors.Is(err, storage.ErrUserNotFound) {
+			log.Warn("user not found", sl.Err(err))
+			return 0, fmt.Errorf("%s:%w", op, ErrInvalidCredentials)
+		}
+		log.Error("failed to find user", sl.Err(err))
+		return 0, fmt.Errorf("%s:%w", op, err)
+	}
+	log.Info("user founded")
+
+	return user.ID, nil
+}

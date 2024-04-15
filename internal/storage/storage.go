@@ -3,10 +3,13 @@ package storage
 import "errors"
 
 var (
-	ErrUserExists      = errors.New("user already exists")
-	ErrUserNotFound    = errors.New("user not found")
-	ErrAdminExists     = errors.New("user already admin")
-	ErrAdminNotFound   = errors.New("admin not found")
-	ErrCreatorNotFound = errors.New("admin not found")
+	ErrAppExists  = errors.New("app already exists")
+	ErrUserExists = errors.New("user already exists")
+
 	ErrAppNotFound     = errors.New("app not found")
+	ErrUserNotFound    = errors.New("user not found")
+	ErrAdminNotFound   = errors.New("admin not found")
+	ErrCreatorNotFound = errors.New("creator not found")
+
+	ErrAdminExists = errors.New("user already admin")
 )

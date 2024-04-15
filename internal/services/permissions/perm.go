@@ -7,9 +7,8 @@ import (
 	"log/slog"
 	"sso/internal/domain/models"
 	"sso/internal/lib/logger/sl"
+	"sso/internal/lib/logging"
 	"sso/internal/storage"
-
-	"github.com/golang-jwt/jwt"
 )
 
 type Permissions struct {
@@ -19,19 +18,20 @@ type Permissions struct {
 }
 
 type AdminSetterDeleter interface {
-	SetAdmin(ctx context.Context, email string, appID int) (err error)
-	DelAdmin(ctx context.Context, email string, appID int) (err error)
-	IsAdmin(ctx context.Context, userID uint64, appID int) (bool, error)
-	IsCreator(ctx context.Context, uid uint64, appID int) (bool, error)
+	SetAdmin(ctx context.Context, email string, appName string) error
+	DelAdmin(ctx context.Context, email string, appName string) error
+	IsAdmin(ctx context.Context, userID uint64, appName string) error
+	IsCreator(ctx context.Context, userID uint64, appName string) error
 }
 
 type AppProvider interface {
-	App(ctx context.Context, appID int) (models.App, error)
+	GetApp(ctx context.Context, appName string) (models.App, error)
 }
 
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrUserNotFound       = errors.New("user not found")
+	ErrNotCreator         = errors.New("ErrNotCreator")
 	ErrAdminExists        = errors.New("user already admin")
 	ErrAdminNotFound      = errors.New("admin not found")
 )
@@ -45,12 +45,27 @@ func New(log *slog.Logger, adminSetterDeleter AdminSetterDeleter, appProvider Ap
 	}
 }
 
-func (p *Permissions) SetAdmin(ctx context.Context, email string, appID int) (bool, error) {
+func (p *Permissions) SetAdmin(ctx context.Context, email string, appName string) (bool, error) {
 	const op = "perm.SetAdmin"
 	log := p.log.With(slog.String("op", op))
 
+	log.Info("attempting to log in")
+	err := logging.Logging(ctx, appName, p.adminSetterDeleter, p.appProvider)
+	if err != nil {
+		if errors.Is(err, logging.ErrCreatorNotFound) {
+			log.Warn("user not creator", sl.Err(err))
+			return false, fmt.Errorf("%s: %w", op, ErrNotCreator)
+		}
+		if errors.Is(err, logging.ErrInvalidCredentials) {
+			log.Warn("cant get info of user", sl.Err(err))
+			return false, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+		}
+		log.Warn("error logging", sl.Err(err))
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+
 	log.Info("attempting to set admin")
-	err := p.adminSetterDeleter.SetAdmin(ctx, email, appID)
+	err = p.adminSetterDeleter.SetAdmin(ctx, email, appName)
 	if err != nil {
 		if errors.Is(err, storage.ErrAdminExists) {
 			log.Warn("user already admin", sl.Err(err))
@@ -60,6 +75,10 @@ func (p *Permissions) SetAdmin(ctx context.Context, email string, appID int) (bo
 			log.Warn("user not found", sl.Err(err))
 			return false, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 		}
+		if errors.Is(err, storage.ErrAppNotFound) {
+			log.Warn("app not found", sl.Err(err))
+			return false, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+		}
 		log.Error("failed to set admin", sl.Err(err))
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
@@ -67,12 +86,27 @@ func (p *Permissions) SetAdmin(ctx context.Context, email string, appID int) (bo
 	return true, nil
 }
 
-func (p *Permissions) DelAdmin(ctx context.Context, email string, appID int) (bool, error) {
+func (p *Permissions) DelAdmin(ctx context.Context, email string, appName string) (bool, error) {
 	const op = "perm.DelAdmin"
 	log := p.log.With(slog.String("op", op))
 
+	log.Info("attempting to log in")
+	err := logging.Logging(ctx, appName, p.adminSetterDeleter, p.appProvider)
+	if err != nil {
+		if errors.Is(err, logging.ErrCreatorNotFound) {
+			log.Warn("user not creator", sl.Err(err))
+			return false, fmt.Errorf("%s: %w", op, ErrNotCreator)
+		}
+		if errors.Is(err, logging.ErrInvalidCredentials) {
+			log.Warn("cant get info of user", sl.Err(err))
+			return false, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+		}
+		log.Warn("error logging", sl.Err(err))
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+
 	log.Info("attempting to delete admin")
-	err := p.adminSetterDeleter.DelAdmin(ctx, email, appID)
+	err = p.adminSetterDeleter.DelAdmin(ctx, email, appName)
 	if err != nil {
 		if errors.Is(err, storage.ErrAdminNotFound) {
 			log.Warn("user already not admin", sl.Err(err))
@@ -80,6 +114,10 @@ func (p *Permissions) DelAdmin(ctx context.Context, email string, appID int) (bo
 		}
 		if errors.Is(err, storage.ErrUserNotFound) {
 			log.Warn("user not found", sl.Err(err))
+			return false, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+		}
+		if errors.Is(err, storage.ErrAppNotFound) {
+			log.Warn("app not found", sl.Err(err))
 			return false, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 		}
 		log.Error("failed to delete admin", sl.Err(err))
@@ -90,31 +128,39 @@ func (p *Permissions) DelAdmin(ctx context.Context, email string, appID int) (bo
 }
 
 // IsAdmin checks if user is admin
-func (p *Permissions) IsAdmin(ctx context.Context, userID uint64, appID int) (bool, error) {
+func (p *Permissions) IsAdmin(ctx context.Context, userID uint64, appName string) (bool, error) {
 	const op = "perm.IsAdmin"
 	log := p.log.With(slog.String("op", op))
 
 	log.Info("checking if user is admin")
-	isAdmin, err := p.adminSetterDeleter.IsAdmin(ctx, userID, appID)
+	err := p.adminSetterDeleter.IsAdmin(ctx, userID, appName)
 	if err != nil {
+		if errors.Is(err, storage.ErrUserNotFound) {
+			log.Warn("user not found", sl.Err(err))
+			return false, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+		}
 		if errors.Is(err, storage.ErrAdminNotFound) {
 			log.Warn("user is not admin", sl.Err(err))
 			return false, nil
+		}
+		if errors.Is(err, storage.ErrAppNotFound) {
+			log.Warn("app not found", sl.Err(err))
+			return false, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 		}
 		log.Error("failed to check if user is admin", sl.Err(err))
 		return false, fmt.Errorf("%s:%w", op, err)
 	}
 
-	log.Info("checked if user is admin", slog.Bool("is_admin", isAdmin))
-	return isAdmin, nil
+	log.Info("checked if user is admin", slog.Bool("is_admin", true))
+	return true, nil
 }
 
-func (p *Permissions) IsCreator(ctx context.Context, token string, appID int) (bool, error) {
+func (p *Permissions) IsCreator(ctx context.Context, userID uint64, appName string) (bool, error) {
 	const op = "perm.IsCreator"
 	log := p.log.With(slog.String("op", op))
 
 	log.Info("checking if user is creator")
-	app, err := p.appProvider.App(ctx, appID)
+	_, err := p.appProvider.GetApp(ctx, appName)
 	if err != nil {
 		if errors.Is(err, storage.ErrAppNotFound) {
 			log.Warn("app not found", sl.Err(err))
@@ -124,25 +170,20 @@ func (p *Permissions) IsCreator(ctx context.Context, token string, appID int) (b
 		return false, fmt.Errorf("%s:%w", op, err)
 	}
 
-	tokenParsed, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) { return []byte(app.Secret), nil })
+	err = p.adminSetterDeleter.IsCreator(ctx, userID, appName)
 	if err != nil {
-		log.Warn("failed to parse token", sl.Err(err))
-		return false, fmt.Errorf("%s:%w", op, ErrInvalidCredentials)
-	}
-	claims := tokenParsed.Claims.(jwt.MapClaims)
-	log.Info("get user claims", slog.Any("claims", claims))
-	uid := uint64(claims["uid"].(float64))
-
-	isCreator, err := p.adminSetterDeleter.IsCreator(ctx, uid, app.ID)
-	if err != nil {
+		if errors.Is(err, storage.ErrUserNotFound) {
+			log.Warn("user not found", sl.Err(err))
+			return false, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+		}
 		if errors.Is(err, storage.ErrCreatorNotFound) {
-			log.Warn("creator is not admin", sl.Err(err))
+			log.Warn("user is not creator", sl.Err(err))
 			return false, nil
 		}
-		log.Error("failed to check if user is admin", sl.Err(err))
+		log.Error("failed to check if user is creator", sl.Err(err))
 		return false, fmt.Errorf("%s:%w", op, err)
 	}
 
-	log.Info("checked if user is creator", slog.Bool("is_creator", isCreator))
-	return isCreator, nil
+	log.Info("checked if user is creator", slog.Bool("is_creator", true))
+	return true, nil
 }

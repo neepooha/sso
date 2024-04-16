@@ -10,7 +10,7 @@
 <div align="center">
   
 [![License](https://img.shields.io/badge/License-MIT-red)](#license)
-[![Go Report Card](https://goreportcard.com/badge/github.com/neepooha/url_shortener)](https://goreportcard.com/report/github.com/neepooha/url_shortener)
+[![Go Report Card](https://goreportcard.com/badge/github.com/neepooha/sso)](https://goreportcard.com/report/github.com/neepooha/sso)
 [![Go Reference](https://pkg.go.dev/badge/github.com/neepooha/url_shortener.svg)](https://pkg.go.dev/github.com/neepooha/url_shortener)
 [![Build Status](https://github.com/neepooha/url_shortener/actions/workflows/deploy.yml/badge.svg)](https://github.com/neepooha/url_shortener/actions/workflows/deploy.yml)
 <br>

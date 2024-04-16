@@ -27,7 +27,7 @@ tasks:
     desc: "run migrations"
     cmds: 
       - go run ./cmd/migrator/ --url=myuser:mypass@localhost:5432 --dbname=auth --migrations-path=./migrations
-  dockpos:
+  db-start:
     aliases:
       - postgres
     desc: "run docker postgres"

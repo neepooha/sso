@@ -4,9 +4,9 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"sso/internal/app"
-	"sso/internal/config"
-	"sso/internal/lib/logger/handlers/slogpretty"
+	"github.com/neepooha/sso/internal/app"
+	"github.com/neepooha/sso/internal/config"
+	"github.com/neepooha/sso/internal/lib/logger/handlers/slogpretty"
 	"syscall"
 )
 

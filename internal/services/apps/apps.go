@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"sso/internal/domain/models"
-	"sso/internal/lib/logger/sl"
-	"sso/internal/lib/logging"
-	"sso/internal/storage"
+	"github.com/neepooha/sso/internal/domain/models"
+	"github.com/neepooha/sso/internal/lib/logger/sl"
+	"github.com/neepooha/sso/internal/lib/logging"
+	"github.com/neepooha/sso/internal/storage"
 )
 
 type Apps struct {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sso/internal/domain/models"
-	"sso/internal/storage"
+	"github.com/neepooha/sso/internal/domain/models"
+	"github.com/neepooha/sso/internal/storage"
 
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"

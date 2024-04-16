@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	perm "sso/internal/services/permissions"
+	perm "github.com/neepooha/sso/internal/services/permissions"
 	"strings"
 
 	"github.com/go-playground/validator/v10"

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
-	authgrpc "sso/internal/grpc/auth"
-	permgrpc "sso/internal/grpc/permissions"
-	appsgrpc "sso/internal/grpc/apps"
+	authgrpc "github.com/neepooha/sso/internal/grpc/auth"
+	permgrpc "github.com/neepooha/sso/internal/grpc/permissions"
+	appsgrpc "github.com/neepooha/sso/internal/grpc/apps"
 
 	"google.golang.org/grpc"
 )

@@ -3,13 +3,13 @@ package app
 import (
 	"errors"
 	"log/slog"
-	grpcapp "sso/internal/app/grpc"
-	"sso/internal/config"
-	"sso/internal/lib/migrator"
-	"sso/internal/services/apps"
-	"sso/internal/services/auth"
-	perm "sso/internal/services/permissions"
-	"sso/internal/storage/postgres"
+	grpcapp "github.com/neepooha/sso/internal/app/grpc"
+	"github.com/neepooha/sso/internal/config"
+	"github.com/neepooha/sso/internal/lib/migrator"
+	"github.com/neepooha/sso/internal/services/apps"
+	"github.com/neepooha/sso/internal/services/auth"
+	perm "github.com/neepooha/sso/internal/services/permissions"
+	"github.com/neepooha/sso/internal/storage/postgres"
 
 	"github.com/golang-migrate/migrate/v4"
 )

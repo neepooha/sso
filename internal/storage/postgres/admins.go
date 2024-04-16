@@ -97,7 +97,7 @@ func (s *Storage) IsAdmin(ctx context.Context, userID uint64, appName string) er
 		}
 		return fmt.Errorf("%s: %w", op, err)
 	}
-	
+
 	stmt = `SELECT FROM users WHERE id = $1`
 	err = s.db.QueryRow(ctx, stmt, userID).Scan()
 	if err != nil {

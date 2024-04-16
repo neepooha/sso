@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"github.com/neepooha/sso/internal/domain/models"
 	"github.com/neepooha/sso/internal/lib/logger/sl"
 	"github.com/neepooha/sso/internal/lib/logging"
 	"github.com/neepooha/sso/internal/storage"
+	"log/slog"
 )
 
 type Apps struct {

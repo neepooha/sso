@@ -27,12 +27,12 @@ type SetDelAdminReq struct {
 }
 
 type IsAdmin struct {
-	UserID   uint64 `validate:"required"`
+	UserID  uint64 `validate:"required"`
 	AppName string `validate:"required"`
 }
 
 type IsCreator struct {
-	UserID   uint64 `validate:"required"`
+	UserID  uint64 `validate:"required"`
 	AppName string `validate:"required"`
 }
 

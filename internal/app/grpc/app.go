@@ -2,11 +2,11 @@ package grpcapp
 
 import (
 	"fmt"
-	"log/slog"
-	"net"
+	appsgrpc "github.com/neepooha/sso/internal/grpc/apps"
 	authgrpc "github.com/neepooha/sso/internal/grpc/auth"
 	permgrpc "github.com/neepooha/sso/internal/grpc/permissions"
-	appsgrpc "github.com/neepooha/sso/internal/grpc/apps"
+	"log/slog"
+	"net"
 
 	"google.golang.org/grpc"
 )
@@ -23,7 +23,7 @@ func New(log *slog.Logger, authService authgrpc.Auth, permService permgrpc.Perm,
 	authgrpc.Register(gRPCServer, authService)
 	permgrpc.Register(gRPCServer, permService)
 	appsgrpc.Register(gRPCServer, appsService)
-	
+
 	return &App{
 		log:        log,
 		gRPCServer: gRPCServer,

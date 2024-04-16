@@ -1,12 +1,12 @@
 package main
 
 import (
-	"log/slog"
-	"os"
-	"os/signal"
 	"github.com/neepooha/sso/internal/app"
 	"github.com/neepooha/sso/internal/config"
 	"github.com/neepooha/sso/internal/lib/logger/handlers/slogpretty"
+	"log/slog"
+	"os"
+	"os/signal"
 	"syscall"
 )
 

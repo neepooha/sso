@@ -1,7 +1,7 @@
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/neepooha/sso/main/raw/assets/images/logo-white.png">
-    <img alt="Daytona logo" src="https://github.com/neepooha/sso/main/raw/assets/images/logo-black.png" width="40%">
+    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/neepooha/sso/raw/main/assets/images/logo-white.png">
+    <img alt="logo" src="https://github.com/neepooha/sso/raw/main/assets/images/logo-black.png" width="40%">
   </picture>
 </div>
 

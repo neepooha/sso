@@ -41,14 +41,15 @@ This project is developed as a grps microservice for authentication, authorizati
 * JWT: [jwt-go](https://github.com/dgrijalva/jwt-go)
 * Config reader: [cleanv](github.com/ilyakaznacheev/cleanenv)  
 * Env reader: [godotenv](github.com/joho/godotenv)
-
-<div align="center">
-This project is a microservice that works in conjunction with a SSO microservice. For full functionality, you need to have two microservices running.
-  
-[![SSO](https://github-readme-stats.vercel.app/api/pin/?username=neepooha&repo=url_shortener&border_color=7F3FBF&bg_color=0D1117&title_color=C9D1D9&text_color=8B949E&icon_color=7F3FBF)](https://github.com/neepooha/url_shortener)
-[![SSO](https://github-readme-stats.vercel.app/api/pin/?username=neepooha&repo=protos&border_color=7F3FBF&bg_color=0D1117&title_color=C9D1D9&text_color=8B949E&icon_color=7F3FBF)](https://github.com/neepooha/sso)
 <br>
-</div>
+
+> [!NOTE]\
+> This project is a microservice that works in conjunction with a SSO microservice. For full functionality, you need to have two microservices running.
+
+[![SSO](https://github-readme-stats.vercel.app/api/pin/?username=neepooha&repo=url_shortener&border_color=1F6FEB&bg_color=0D1117&title_color=C9D1D9&text_color=8B949E&icon_color=1F6FEB)](https://github.com/neepooha/url_shortener)
+[![PROTO](https://github-readme-stats.vercel.app/api/pin/?username=neepooha&repo=protos&border_color=1F6FEB&bg_color=0D1117&title_color=C9D1D9&text_color=8B949E&icon_color=1F6FEB)](https://github.com/neepooha/protos)
+<br>
+
 
 ## Getting Started
 

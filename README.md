@@ -52,7 +52,7 @@ This project is developed as a grps microservice for authentication, authorizati
 </div>
 
 > [!NOTE]\
-> This project is a microservice that works in conjunction with other microservice. For example you can use url-shortener
+> This project is a microservice that works in conjunction with other microservice. For example you can use url-shortener <br>
 [![URL-shortener](https://github-readme-stats.vercel.app/api/pin/?username=neepooha&repo=url_shortener&border_color=1F6FEB&bg_color=0D1117&title_color=C9D1D9&text_color=8B949E&icon_color=1F6FEB)](https://github.com/neepooha/url_shortener)
 [![PROTO](https://github-readme-stats.vercel.app/api/pin/?username=neepooha&repo=protos&border_color=1F6FEB&bg_color=0D1117&title_color=C9D1D9&text_color=8B949E&icon_color=1F6FEB)](https://github.com/neepooha/protos)
 <br>

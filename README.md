@@ -17,7 +17,7 @@
 </div>
 
 ## Features
-
+The template for this project was taken from the project of [Nikolay Tuzov](https://github.com/JustSkiv).
 This project is developed as a grps microservice for authentication, authorization and permissions.
 
 ### The project used:
@@ -43,10 +43,17 @@ This project is developed as a grps microservice for authentication, authorizati
 * Env reader: [godotenv](github.com/joho/godotenv)
 <br>
 
-> [!NOTE]\
-> This project is a microservice that works in conjunction with a SSO microservice. For full functionality, you need to have two microservices running.
+<div align="center">
+  scheme of user interaction, SSO and URL-shortener
+  <br>
+  <picture>
+    <img alt="scheme" src="https://github.com/neepooha/sso/raw/main/assets/images/scheme.png" width="60%">
+  </picture>
+</div>
 
-[![SSO](https://github-readme-stats.vercel.app/api/pin/?username=neepooha&repo=url_shortener&border_color=1F6FEB&bg_color=0D1117&title_color=C9D1D9&text_color=8B949E&icon_color=1F6FEB)](https://github.com/neepooha/url_shortener)
+> [!NOTE]\
+> This project is a microservice that works in conjunction with other microservice. For example you can use url-shortener
+[![URL-shortener](https://github-readme-stats.vercel.app/api/pin/?username=neepooha&repo=url_shortener&border_color=1F6FEB&bg_color=0D1117&title_color=C9D1D9&text_color=8B949E&icon_color=1F6FEB)](https://github.com/neepooha/url_shortener)
 [![PROTO](https://github-readme-stats.vercel.app/api/pin/?username=neepooha&repo=protos&border_color=1F6FEB&bg_color=0D1117&title_color=C9D1D9&text_color=8B949E&icon_color=1F6FEB)](https://github.com/neepooha/protos)
 <br>
 
